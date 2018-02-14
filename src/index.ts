@@ -1,14 +1,9 @@
-import { IncomingMessage } from "http"
-import { Response } from "node-fetch"
 import { FetchResult } from "apollo-link"
-import { ErrorCallback, AsyncResultCallback } from "async"
-import { ApolloClient, ApolloQueryResult } from "apollo-client"
-import { ExecutionResult } from "graphql/execution/execute"
-import { Observable } from "apollo-client/util/Observable"
-import SwishPayments, { PaymentRequestType } from "swish-payments"
-import { createClient } from "./createLink"
+import { ApolloClient } from "apollo-client"
 
-import { InvoiceInputType, InvoiceType, SquishOptions } from "./types"
+import SwishPayments, { PaymentRequest, RefundRequest } from "swish-payments"
+
+import { InvoiceInputType, InvoiceType, Options } from "./types"
 import {
   CreateInvoiceMutation,
   PayInvoiceMutation,
@@ -16,61 +11,67 @@ import {
   SimulatePaymentMutation
 } from "./queries"
 
+import { createClient } from "./createClient"
+
 export default class Squish {
-  swish: SwishPayments
+  swish: any
   paymentHook: Function
+  refundHook: Function
   client: ApolloClient<any>
 
-  constructor(private opts: SquishOptions) {
+  constructor(private opts: Options) {
     this.swish = new SwishPayments(opts.swish.cert)
     this.paymentHook = this.swish.createHook(this.pay)
-
-    this.client = createClient({ token: opts.token, uri: "http://localhost:4000" })
+    this.refundHook = this.swish.createHook(this.refund)
+    this.client = createClient({ token: opts.token, uri: opts.swish.callbackUrl })
   }
   /**
    * Create a new invoice
    *
-   * @param  {InvoiceInputType} data
+   * @param  {InvoiceInputType} invoice
    * @returns Promise
    */
-  create(data: InvoiceInputType): Promise<InvoiceType> {
+  create(invoice: InvoiceInputType): Promise<InvoiceType> {
     return this.client
       .mutate({
         mutation: CreateInvoiceMutation,
-        variables: { data }
+        variables: { data: invoice }
       })
       .then(handleResponse)
   }
   /**
-   * Subscribe to changes to an invoice
+   * Subscribe to invoice changes
    *
    * @param  {string} id
-   * @param  {AsyncResultCallback<InvoiceType>} onUpdate
-   * @param  {ErrorCallback<Error>} onError
+   * @param  {(err?:Error,invoice?:InvoiceType)=>void} callback
    */
-  subscribe(id: string, onUpdate: AsyncResultCallback<InvoiceType>, onError: ErrorCallback<Error>) {
+  subscribe(id: string, callback: (err?: Error, invoice?: InvoiceType) => void) {
     return this.client
       .subscribe({ query: InvoiceSubscription, variables: { id } })
-      .subscribe(res => onUpdate(handleResponse(res)), onError)
+      .subscribe(
+        (res: any) => callback(undefined, handleResponse(res)),
+        (err: Error) => callback(err, undefined)
+      )
   }
   /**
    * Pay invoice
    *
-   * @param  {PaymentRequestType} data
+   * @param  {PaymentRequest} invoice
    * @returns Promise
    */
-  pay(data: PaymentRequestType): Promise<InvoiceType> {
+  pay(invoice: PaymentRequest): Promise<InvoiceType> {
     return this.client
-      .mutate({ mutation: PayInvoiceMutation, variables: { data } })
+      .mutate({ mutation: PayInvoiceMutation, variables: { data: invoice } })
       .then(handleResponse)
   }
   /**
    * Refund invoice
    *
-   * @param  {PaymentRequestType} data
+   * @param  {PaymentRequestType} invoice
    * @returns Promise
    */
-  refund(data: PaymentRequestType): Promise<InvoiceType> {
+  refund(invoice: RefundRequest): Promise<InvoiceType> {
+    console.log("refund for invoice", invoice)
     throw new Error("not implemented")
   }
 
@@ -107,6 +108,8 @@ export default class Squish {
 }
 
 function handleResponse(res: FetchResult) {
+  console.log("handleRes", res)
+
   const key = Object.keys(res.data || {})[0]
   return res.data && res.data[key]
 }

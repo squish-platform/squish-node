@@ -41,6 +41,7 @@ const invoice = await squish.create(
 ```js
 // Setup Swish payment request webook
 app.post("/paymentrequests", squish.paymentHook)
+app.post("/refunds", squish.refundHook)
 
 // Create invoice
 squish.create({ amount: "100.00", customer: "46700123456" }).then(invoice => {

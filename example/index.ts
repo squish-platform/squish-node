@@ -1,4 +1,4 @@
-import Squish, { InvoiceType } from "./src/squish-node"
+import Squish, { InvoiceType } from "../src/squish-node"
 
 const squish = new Squish({
   token: "<secret_key>",

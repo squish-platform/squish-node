@@ -5,7 +5,7 @@ export type InvoiceInputType = {
 }
 
 export type InvoiceType = {
-  id?: string
+  id: string
   amount: string
   customer: string
   vendor: string
@@ -19,7 +19,7 @@ export type InvoiceType = {
   payment: any
 }
 
-export type SquishOptions = {
+export type Options = {
   token: string
   swish: {
     vendor: string
