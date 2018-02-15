@@ -21,9 +21,11 @@ export type InvoiceType = {
 
 export type Options = {
   token: string
+  apiUrl: string
   swish: {
     vendor: string
-    callbackUrl: string
+    paymentUrl: string
+    refundUrl: string
     cert: {
       pfx: string
       passphrase: string

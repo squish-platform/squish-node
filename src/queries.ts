@@ -13,6 +13,7 @@ paid_at
 meta
 payment {
   amount
+  payeeAlias
   payerAlias
   dateCreated
   datePaid

@@ -1,5 +1,5 @@
 import * as WebSocket from "ws"
-import * as fetch from "unfetch"
+import * as fetch from "isomorphic-unfetch"
 import { split } from "apollo-link"
 import { ApolloClient } from "apollo-client"
 import { InMemoryCache } from "apollo-cache-inmemory"
@@ -22,6 +22,7 @@ export function createClient(config: { token: string; uri: string }): ApolloClie
   const ws = new WebSocketLink({
     uri: uri.replace("http", "ws"),
     options: {
+      lazy: true,
       reconnect: true,
       connectionParams: {
         authToken: token
@@ -31,6 +32,7 @@ export function createClient(config: { token: string; uri: string }): ApolloClie
   })
 
   return new ApolloClient({
+    ssrMode: true,
     link: splitOnOperation(ws, http),
     cache: new InMemoryCache()
   })

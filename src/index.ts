@@ -23,7 +23,7 @@ export default class Squish {
     this.swish = new SwishPayments(opts.swish.cert)
     this.paymentHook = this.swish.createHook(this.pay)
     this.refundHook = this.swish.createHook(this.refund)
-    this.client = createClient({ token: opts.token, uri: opts.swish.callbackUrl })
+    this.client = createClient({ token: opts.token, uri: opts.apiUrl })
   }
   /**
    * Create a new invoice
@@ -48,10 +48,7 @@ export default class Squish {
   subscribe(id: string, callback: (err?: Error, invoice?: InvoiceType) => void) {
     return this.client
       .subscribe({ query: InvoiceSubscription, variables: { id } })
-      .subscribe(
-        (res: any) => callback(undefined, handleResponse(res)),
-        (err: Error) => callback(err, undefined)
-      )
+      .subscribe(res => callback(null, handleResponse(res)), callback)
   }
   /**
    * Pay invoice
@@ -97,7 +94,7 @@ export default class Squish {
   paymentRequest(invoice: InvoiceInputType): Promise<string> {
     return this.swish.paymentRequest({
       payeePaymentReference: invoice.id,
-      callbackUrl: this.opts.swish.callbackUrl,
+      callbackUrl: this.opts.swish.paymentUrl,
       payerAlias: invoice.customer,
       payeeAlias: this.opts.swish.vendor,
       amount: invoice.amount,
