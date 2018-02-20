@@ -7,8 +7,8 @@ class Squish {
     constructor(opts) {
         this.opts = opts;
         this.swish = new swish_payments_1.default(opts.swish.cert);
-        this.paymentHook = this.swish.createHook(this.pay);
-        this.refundHook = this.swish.createHook(this.refund);
+        this.paymentHook = this.swish.createHook(this.pay.bind(this));
+        this.refundHook = this.swish.createHook(this.refund.bind(this));
         this.client = createClient_1.createClient({ token: opts.token, uri: opts.apiUrl });
     }
     /**
@@ -77,8 +77,9 @@ class Squish {
      * @param  {InvoiceInputType} invoice
      */
     paymentRequest(invoice) {
+        console.log("paymentRequest", invoice, this.opts);
         return this.swish.paymentRequest({
-            payeePaymentReference: invoice.id,
+            // payeePaymentReference: invoice.id,
             callbackUrl: this.opts.swish.paymentUrl,
             payerAlias: invoice.customer,
             payeeAlias: this.opts.swish.vendor,
